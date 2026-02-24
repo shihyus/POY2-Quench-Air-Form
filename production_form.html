@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>POY2 Quench Air Reading</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans+TC:wght@300;400;500&display=swap');
+
+  :root {
+    --bg: #0f1117;
+    --surface: #1a1d27;
+    --border: #2a2d3e;
+    --accent: #00d4aa;
+    --accent-dim: rgba(0,212,170,0.1);
+    --text: #e8eaf0;
+    --text-muted: #6b7080;
+    --error: #ff6b6b;
+    --success: #00d4aa;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'IBM Plex Sans TC', sans-serif;
+    font-weight: 300;
+    min-height: 100vh;
+    padding: 24px 16px 48px;
+  }
+
+  header {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+    margin-bottom: 32px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  header h1 {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 18px;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    color: var(--accent);
+  }
+
+  header span {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    color: var(--text-muted);
+    letter-spacing: 0.1em;
+  }
+
+  .form-section {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 16px;
+  }
+
+  .section-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.15em;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    margin-bottom: 14px;
+  }
+
+  .row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+
+  .field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .field label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    color: var(--text-muted);
+    letter-spacing: 0.08em;
+  }
+
+  .field input, .field select {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    color: var(--text);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 15px;
+    padding: 10px 12px;
+    width: 100%;
+    transition: border-color 0.15s;
+    -webkit-appearance: none;
+  }
+
+  .field input:focus, .field select:focus {
+    outline: none;
+    border-color: var(--accent);
+  }
+
+  .field select {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%236b7080' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    padding-right: 32px;
+  }
+
+  .positions-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+  }
+
+  .pos-field {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .pos-field label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    color: var(--text-muted);
+    letter-spacing: 0.08em;
+  }
+
+  .pos-field input {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    color: var(--text);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 15px;
+    padding: 9px 8px;
+    width: 100%;
+    text-align: center;
+    transition: border-color 0.15s, background 0.15s;
+    -webkit-appearance: none;
+  }
+
+  .pos-field input:focus {
+    outline: none;
+    border-color: var(--accent);
+    background: var(--accent-dim);
+  }
+
+  .pos-field input.has-value {
+    border-color: rgba(0,212,170,0.4);
+  }
+
+  .submit-btn {
+    width: 100%;
+    padding: 16px;
+    background: var(--accent);
+    border: none;
+    border-radius: 6px;
+    color: #0f1117;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 14px;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    cursor: pointer;
+    margin-top: 8px;
+    transition: opacity 0.15s, transform 0.1s;
+  }
+
+  .submit-btn:active { transform: scale(0.98); opacity: 0.9; }
+  .submit-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  #status {
+    margin-top: 12px;
+    padding: 12px 16px;
+    border-radius: 6px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    text-align: center;
+    display: none;
+  }
+
+  #status.success {
+    background: rgba(0,212,170,0.1);
+    border: 1px solid rgba(0,212,170,0.3);
+    color: var(--success);
+    display: block;
+  }
+
+  #status.error {
+    background: rgba(255,107,107,0.1);
+    border: 1px solid rgba(255,107,107,0.3);
+    color: var(--error);
+    display: block;
+  }
+
+  .progress-bar {
+    height: 2px;
+    background: var(--border);
+    border-radius: 1px;
+    margin-bottom: 20px;
+    overflow: hidden;
+  }
+
+  .progress-fill {
+    height: 100%;
+    background: var(--accent);
+    border-radius: 1px;
+    transition: width 0.3s ease;
+    width: 0%;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>POY2 Quench Air Reading</h1>
+</header>
+
+<div class="progress-bar">
+  <div class="progress-fill" id="progressFill"></div>
+</div>
+
+<form id="dataForm">
+
+  <div class="form-section">
+    <div class="section-label">Basic Info</div>
+    <div class="row">
+      <div class="field">
+        <label>DATE</label>
+        <input type="date" id="date" required>
+      </div>
+      <div class="field">
+        <label>LINE</label>
+        <select id="line" required>
+          <option value="">Select Line</option>
+          <option>3A</option><option>3B</option><option>3C</option>
+          <option>3D</option><option>3E</option><option>3F</option>
+          <option>3G</option><option>3H</option><option>3I</option>
+          <option>3J</option><option>3K</option><option>3L</option>
+          <option>3M</option><option>3N</option><option>3O</option>
+          <option>3P</option><option>3Q</option><option>3R</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <div class="form-section">
+    <div class="section-label">Position Reading</div>
+    <div class="positions-grid" id="posGrid"></div>
+  </div>
+
+  <button type="submit" class="submit-btn" id="submitBtn">Submit</button>
+  <div id="status"></div>
+
+</form>
+
+<script>
+  const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyAW6f3SQML4sHBK5tm7RUwpxV2SuQ1trsR_mi69C4BOHOHnk4cQX1lSe1XnunpXCRESw/exec';
+
+  // Set today's date
+  const today = new Date().toISOString().split('T')[0];
+  document.getElementById('date').value = today;
+
+  // Build position fields
+  const grid = document.getElementById('posGrid');
+  for (let i = 1; i <= 16; i++) {
+    const num = String(i).padStart(2, '0');
+    const div = document.createElement('div');
+    div.className = 'pos-field';
+    div.innerHTML = `<label>P${num}</label><input type="number" id="p${num}" inputmode="decimal" step="any" placeholder="—">`;
+    grid.appendChild(div);
+  }
+
+  // Track filled positions for progress bar
+  document.querySelectorAll('.pos-field input').forEach(input => {
+    input.addEventListener('input', () => {
+      if (input.value !== '') input.classList.add('has-value');
+      else input.classList.remove('has-value');
+      updateProgress();
+    });
+  });
+
+  function updateProgress() {
+    const filled = document.querySelectorAll('.pos-field input.has-value').length;
+    document.getElementById('progressFill').style.width = (filled / 16 * 100) + '%';
+  }
+
+  document.getElementById('dataForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const btn = document.getElementById('submitBtn');
+    const status = document.getElementById('status');
+
+    btn.disabled = true;
+    btn.textContent = 'Sending...';
+    status.className = '';
+    status.style.display = 'none';
+
+    const payload = {
+      date: document.getElementById('date').value,
+      line: document.getElementById('line').value,
+    };
+
+    for (let i = 1; i <= 16; i++) {
+      const num = String(i).padStart(2, '0');
+      const val = document.getElementById('p' + num).value;
+      payload['p' + num] = val !== '' ? parseFloat(val) : '';
+    }
+
+    try {
+      await fetch(SCRIPT_URL, {
+        method: 'POST',
+        mode: 'no-cors',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+
+      status.textContent = '✓ Data successfully written to spreadsheet';
+      status.className = 'success';
+
+      // Reset positions but keep date and line for next entry
+      document.querySelectorAll('.pos-field input').forEach(input => {
+        input.value = '';
+        input.classList.remove('has-value');
+      });
+      updateProgress();
+      document.getElementById('line').value = '';
+
+    } catch (err) {
+      status.textContent = '✗ Send failed, please check network and retry';
+      status.className = 'error';
+    }
+
+    btn.disabled = false;
+    btn.textContent = 'Submit';
+  });
+</script>
+</body>
+</html>
